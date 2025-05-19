@@ -1,12 +1,26 @@
 const RegistrationModel = require('../models/RegistrationModel');
+const { parseAadhaar } = require('../utils/aadhaarOcr');
+const path = require('path');
 
 exports.create = async (req, res) => {
   try {
     const body = req.body;
     const files = req.files;
 
+    const aadhaarFilePath = files.aadhaar_file?.[0]?.path;
+
+    // Run OCR on the uploaded Aadhaar file
+    let aadhaarData = {};
+    if (aadhaarFilePath) {
+      aadhaarData = await parseAadhaar(path.resolve(aadhaarFilePath));
+    }
+
     const newData = {
       ...body,
+      first_name: body.first_name || aadhaarData.name || '',
+      gender: body.gender || aadhaarData.gender || '',
+      dob: body.dob || aadhaarData.dob || '',
+      aadhaar_number: body.aadhaar_number || aadhaarData.aadhaar_number || '',
       pan_file: files.pan_file?.[0]?.filename || '',
       aadhaar_file: files.aadhaar_file?.[0]?.filename || '',
       marksheet_file: files.marksheet_file?.[0]?.filename || '',
